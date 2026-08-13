@@ -1,0 +1,272 @@
+/* Variables & Theme */
+:root {
+    --primary: #0D9488;       /* Huduma Teal Green */
+    --primary-hover: #0F766E;
+    --navy: #0F172A;          /* Deep Dark Blue */
+    --bg-gray: #F1F5F9;
+    --card-bg: #FFFFFF;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+    --border-color: #E2E8F0;
+    --radius: 12px;
+    --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-gray);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+    background-color: var(--navy);
+    color: #fff;
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+    z-index: 10;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    background-color: var(--primary);
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.logo-container h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.logo-container p {
+    font-size: 0.75rem;
+    color: #94A3B8;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+    background-color: #334155;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #475569;
+}
+
+/* App Main Layout */
+.app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 65px);
+}
+
+/* Sidebar */
+.sidebar {
+    width: 320px;
+    background-color: #F8FAFC;
+    border-right: 1px solid var(--border-color);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    overflow-y: auto;
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card h2 {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Custom Upload Inputs */
+.upload-box {
+    margin-bottom: 0.75rem;
+}
+
+.upload-box:last-child {
+    margin-bottom: 0;
+}
+
+.upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #CBD5E1;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    background-color: #F8FAFC;
+    transition: all 0.2s ease;
+}
+
+.upload-label:hover {
+    border-color: var(--primary);
+    background-color: #F0FDFA;
+}
+
+.upload-label i {
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.upload-label span {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.upload-label small {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Preset & Action Buttons */
+.preset-buttons, .action-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-preset, .btn-tool {
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    background-color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.15s ease;
+}
+
+.btn-preset:hover, .btn-tool:hover {
+    background-color: #F1F5F9;
+}
+
+.btn-danger {
+    color: #E11D48;
+    border-color: #FECDD3;
+}
+
+.btn-danger:hover {
+    background-color: #FFF1F2;
+}
+
+/* Workspace Area */
+.workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #E2E8F0;
+    overflow: auto;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.workspace-toolbar {
+    width: 100%;
+    max-width: 794px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Paper Canvas Rendering */
+.paper-container {
+    background-color: #ffffff;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    line-height: 0;
+}
+
+/* Responsive Styles for Mobile */
+@media (max-width: 900px) {
+    .app-body {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .workspace {
+        padding: 1rem 0.5rem;
+    }
+}

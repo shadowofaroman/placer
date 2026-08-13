@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huduma ID Print Studio</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- App CSS -->
+    <link rel="stylesheet" href="css/index.css">
+
+    <!-- Fabric.js (Canvas Engine) & jsPDF (PDF Generator) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="navbar">
+        <div class="logo-container">
+            <div class="logo-icon"><i class="fa-solid fa-id-card"></i></div>
+            <div>
+                <h1>Huduma ID Express</h1>
+                <p>Fast ID Layout & PDF Generator</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button id="reset-btn" class="btn btn-secondary"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+            <button id="export-pdf-btn" class="btn btn-primary"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="app-body">
+        
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            
+            <!-- Upload Section -->
+            <section class="card">
+                <h2><i class="fa-solid fa-cloud-arrow-up"></i> Upload Images</h2>
+                
+                <div class="upload-box">
+                    <label for="front-id-input" class="upload-label">
+                        <i class="fa-solid fa-image"></i>
+                        <span>Upload ID Front</span>
+                        <small>PNG, JPG, WEBP</small>
+                    </label>
+                    <input type="file" id="front-id-input" accept="image/*" hidden>
+                </div>
+
+                <div class="upload-box">
+                    <label for="back-id-input" class="upload-label">
+                        <i class="fa-solid fa-image"></i>
+                        <span>Upload ID Back</span>
+                        <small>PNG, JPG, WEBP</small>
+                    </label>
+                    <input type="file" id="back-id-input" accept="image/*" hidden>
+                </div>
+            </section>
+
+            <!-- Quick Presets -->
+            <section class="card">
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Quick Presets</h2>
+                <div class="preset-buttons">
+                    <button id="preset-stacked" class="btn-preset"><i class="fa-solid fa-bars"></i> Standard Stacked</button>
+                    <button id="preset-side" class="btn-preset"><i class="fa-solid fa-table-columns"></i> Side by Side</button>
+                    <button id="preset-multi" class="btn-preset"><i class="fa-solid fa-grip"></i> 4-Up Grid</button>
+                </div>
+            </section>
+
+            <!-- Alignment Tools -->
+            <section class="card">
+                <h2><i class="fa-solid fa-sliders"></i> Adjustments</h2>
+                <div class="action-grid">
+                    <button id="rotate-btn" class="btn-tool"><i class="fa-solid fa-rotate"></i> Rotate 90°</button>
+                    <button id="center-h-btn" class="btn-tool"><i class="fa-solid fa-align-center"></i> Center Horiz.</button>
+                    <button id="delete-btn" class="btn-tool btn-danger"><i class="fa-solid fa-trash"></i> Delete Selected</button>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Workspace (A4 Canvas Area) -->
+        <section class="workspace">
+            <div class="workspace-toolbar">
+                <span class="paper-info"><i class="fa-regular fa-file-lines"></i> Sheet: A4 (Standard Print)</span>
+                <div class="zoom-controls">
+                    <small>Drag and resize ID cards on the page below:</small>
+                </div>
+            </div>
+
+            <!-- Canvas Wrapper simulating A4 Paper -->
+            <div class="paper-container">
+                <canvas id="id-canvas"></canvas>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- App Logic -->
+    <script src="js/index.js"></script>
+</body>
+</html>
