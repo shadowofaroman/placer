@@ -350,3 +350,84 @@ body {
     gap: 10px;
     border-top: 1px solid var(--border-color);
 }
+
+/* --- PRINT MODE STYLES --- */
+@page {
+    size: A4 portrait;
+    margin: 0;
+}
+
+@media print {
+    /* Hide all UI elements except the canvas workspace */
+    .navbar,
+    .sidebar,
+    .workspace-toolbar,
+    .modal-overlay {
+        display: none !important;
+    }
+
+    body, .app-body, .workspace {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        height: auto !important;
+        display: block !important;
+    }
+
+    .paper-container {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid;
+    }
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    margin-top: auto;
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, #F0FDFA 0%, #ECFEFF 100%);
+    border: 1px solid #99F6E4;
+    text-align: center;
+}
+
+.sidebar-footer p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.sidebar-footer p strong {
+    color: var(--text-main);
+}
+
+.sidebar-footer i.fa-heart {
+    color: #E11D48;
+}
+
+.sidebar-footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-footer a:hover {
+    background: var(--primary);
+    color: #fff;
+}
