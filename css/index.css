@@ -12,6 +12,31 @@
     --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
+/* --- CUSTOM SLEEK SCROLLBARS --- */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Firefox Scrollbar Support */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #CBD5E1 transparent;
+}
+
 /* Reset */
 * {
     box-sizing: border-box;
@@ -112,17 +137,40 @@ body {
     height: calc(100vh - 65px);
 }
 
-/* Sidebar */
+/* Sidebars (Left and Right) */
 .sidebar {
-    width: 320px;
+    width: 290px;
     background-color: #F8FAFC;
-    border-right: 1px solid var(--border-color);
     padding: 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
     overflow-y: auto;
+    overflow-x: hidden;
+    flex-shrink: 0;
+    height: 100%; /* Independent height */
+    min-height: 0;
 }
+
+.sidebar-left {
+    border-right: 1px solid var(--border-color);
+}
+
+.sidebar-right {
+    border-left: 1px solid var(--border-color);
+}
+
+.help-card {
+    background-color: #F0FDFA;
+    border-color: #CCFBF1;
+}
+
+.help-card p {
+    font-size: 0.8rem;
+    color: #0F766E;
+    line-height: 1.4;
+}
+
 
 .card {
     background: var(--card-bg);
@@ -231,6 +279,7 @@ body {
     overflow: auto;
     align-items: center;
     padding: 1.5rem;
+    min-height: 0;
 }
 
 .workspace-toolbar {
@@ -252,8 +301,7 @@ body {
     line-height: 0;
 }
 
-/* Responsive Styles for Mobile */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
     .app-body {
         flex-direction: column;
         height: auto;
@@ -262,7 +310,9 @@ body {
 
     .sidebar {
         width: 100%;
+        height: auto;
         border-right: none;
+        border-left: none;
         border-bottom: 1px solid var(--border-color);
     }
 
@@ -430,4 +480,64 @@ body {
 .sidebar-footer a:hover {
     background: var(--primary);
     color: #fff;
+}
+
+/* Drag and Drop Fullscreen Overlay */
+.drag-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    transition: all 0.2s ease;
+}
+
+.drag-overlay.active {
+    display: flex;
+}
+
+.drag-overlay-card {
+    background: #FFFFFF;
+    border: 3px dashed var(--primary);
+    border-radius: 20px;
+    padding: 3rem 4rem;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.drag-icon {
+    font-size: 4rem;
+    color: #F97316; /* Fire Orange */
+    margin-bottom: 1rem;
+    animation: pulseFire 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseFire {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.drag-overlay-card h2 {
+    font-size: 1.85rem;
+    color: var(--navy);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.drag-overlay-card p {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 500;
 }

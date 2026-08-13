@@ -210,6 +210,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- TOOL ACTIONS ---
 
+    // --- LAYER ORDERING & MARGIN TOGGLE ---
+    let marginGuideObj = null;
+
+    // Bring Forward
+    document.getElementById('bring-forward-btn').addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) {
+            canvas.bringForward(activeObj);
+            canvas.renderAll();
+        }
+    });
+
+    // Send Backward
+    document.getElementById('send-backward-btn').addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) {
+            canvas.sendBackwards(activeObj);
+            canvas.renderAll();
+        }
+    });
+
+    // Toggle Margins
+    document.getElementById('toggle-margin-btn').addEventListener('click', () => {
+        const objects = canvas.getObjects();
+        const marginGuide = objects.find(obj => obj.type === 'rect' && !obj.selectable);
+        if (marginGuide) {
+            marginGuide.set('visible', !marginGuide.visible);
+            canvas.renderAll();
+        }
+    });
+
     // Rotate Selected Object by 90 degrees
     document.getElementById('rotate-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
@@ -289,4 +320,64 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save PDF with clear naming
         pdf.save(`Huduma_ID_Print_${new Date().toISOString().slice(0, 10)}.pdf`);
     });
+
+    // --- DRAG AND DROP OVERLAY LOGIC ---
+        const dragOverlay = document.getElementById('drag-drop-overlay');
+        let dragCounter = 0; // Fixes flickering when hovering over child elements
+
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+                dragOverlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                dragOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            dragOverlay.classList.remove('active');
+
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            if (files.length === 0) return;
+
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    fabric.Image.fromURL(event.target.result, (img) => {
+                        // Proportional scale to standard width
+                        const scale = ID_WIDTH_PX / img.width;
+                        img.set({
+                            scaleX: scale,
+                            scaleY: scale,
+                            cornerColor: '#0D9488',
+                            cornerStyle: 'circle',
+                            borderColor: '#0D9488',
+                            cornerSize: 10,
+                            transparentCorners: false,
+                            left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2 + (index * 25),
+                            top: 120 + (index * (ID_HEIGHT_PX + 30))
+                        });
+                        img.setCoords();
+                        canvas.add(img);
+                        canvas.setActiveObject(img);
+                        canvas.renderAll();
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
 });
