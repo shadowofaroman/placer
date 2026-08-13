@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // State Variables
     let frontImgObj = null;
     let backImgObj = null;
+    let cropper = null;
 
     // --- INITIALIZE FABRIC.JS CANVAS ---
     const canvas = new fabric.Canvas('id-canvas', {
@@ -49,13 +50,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (!file) return;
 
+        e.target.value = '';
+
         const reader = new FileReader();
         reader.onload = function (event) {
             fabric.Image.fromURL(event.target.result, (img) => {
                 
-                // Scale image precisely to Standard Physical ID dimensions
-                img.scaleToWidth(ID_WIDTH_PX);
-                img.scaleToHeight(ID_HEIGHT_PX);
+                // Scale image precisely to standard ID dimensions without double-scaling
+                img.set({
+                    scaleX: ID_WIDTH_PX / img.width,
+                    scaleY: ID_HEIGHT_PX / img.height
+                });
+                img.setCoords();
 
                 // Add custom corner styles for sleek UI
                 img.set({
@@ -127,6 +133,79 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.renderAll();
     });
 
+    // --- CROP MODE LOGIC ---
+    const cropModal = document.getElementById('crop-modal');
+    const cropImgElement = document.getElementById('crop-image');
+
+    // Open Crop Modal
+    document.getElementById('crop-btn').addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (!activeObj || activeObj.type !== 'image') {
+            return alert("Please click and select an ID image on the canvas to crop.");
+        }
+
+        // Convert fabric image to Data URL for Cropper.js
+        const src = activeObj.toDataURL();
+        cropImgElement.src = src;
+
+        // Show modal
+        cropModal.classList.add('active');
+
+        // Initialize Cropper.js
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(cropImgElement, {
+            viewMode: 1,
+            autoCropArea: 0.9,
+            responsive: true
+        });
+    });
+
+    // Close Modal Helper
+    const closeCropModal = () => {
+        cropModal.classList.remove('active');
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    };
+
+    document.getElementById('close-modal-btn').addEventListener('click', closeCropModal);
+    document.getElementById('cancel-crop-btn').addEventListener('click', closeCropModal);
+
+    // Apply Crop Back to Fabric Canvas
+    document.getElementById('apply-crop-btn').addEventListener('click', () => {
+        if (!cropper) return;
+
+        const activeObj = canvas.getActiveObject();
+        if (!activeObj) return;
+
+        // Get cropped image canvas from Cropper.js
+        const croppedCanvas = cropper.getCroppedCanvas();
+        const croppedDataUrl = croppedCanvas.toDataURL();
+
+        // Store current dimensions & position
+        const left = activeObj.left;
+        const top = activeObj.top;
+        const angle = activeObj.angle;
+
+        // Update source of the Fabric Image
+        activeObj.setSrc(croppedDataUrl, () => {
+            activeObj.set({
+                left: left,
+                top: top,
+                angle: angle
+            });
+            // Apply clean scaling after cropping
+            activeObj.set({
+                scaleX: ID_WIDTH_PX / activeObj.width,
+                scaleY: ID_HEIGHT_PX / activeObj.height
+            });
+            activeObj.setCoords();
+            canvas.renderAll();
+            closeCropModal();
+        });
+    });
+
     // --- TOOL ACTIONS ---
 
     // Rotate Selected Object by 90 degrees
@@ -164,6 +243,11 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.clear();
             frontImgObj = null;
             backImgObj = null;
+
+            // Clear file input values
+            document.getElementById('front-id-input').value = '';
+            document.getElementById('back-id-input').value = '';
+
             canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
             drawPageMarginGuides();
         }

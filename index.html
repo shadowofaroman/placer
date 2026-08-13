@@ -19,6 +19,10 @@
     <!-- Fabric.js (Canvas Engine) & jsPDF (PDF Generator) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <!-- Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
 <body>
 
@@ -80,6 +84,7 @@
             <section class="card">
                 <h2><i class="fa-solid fa-sliders"></i> Adjustments</h2>
                 <div class="action-grid">
+                    <button id="crop-btn" class="btn-tool"><i class="fa-solid fa-crop-simple"></i> Crop Selected</button>
                     <button id="rotate-btn" class="btn-tool"><i class="fa-solid fa-rotate"></i> Rotate 90°</button>
                     <button id="center-h-btn" class="btn-tool"><i class="fa-solid fa-align-center"></i> Center Horiz.</button>
                     <button id="delete-btn" class="btn-tool btn-danger"><i class="fa-solid fa-trash"></i> Delete Selected</button>
@@ -103,6 +108,25 @@
         </section>
 
     </main>
+
+    <!-- Crop Modal -->
+    <div id="crop-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-crop-simple"></i> Crop Image</h3>
+                <button id="close-modal-btn" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="crop-container">
+                    <img id="crop-image" src="" alt="Crop Source">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-crop-btn" class="btn btn-secondary">Cancel</button>
+                <button id="apply-crop-btn" class="btn btn-primary"><i class="fa-solid fa-check"></i> Apply Crop</button>
+            </div>
+        </div>
+    </div>
 
     <!-- App Logic -->
     <script src="js/index.js"></script>
