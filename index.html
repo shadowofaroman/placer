@@ -45,7 +45,7 @@
     <main class="app-body">
         
         <!-- Sidebar Controls -->
-        <aside class="sidebar">
+        <aside class="sidebar sidebar-left">
             
             <!-- Upload Section -->
             <section class="card">
@@ -114,6 +114,34 @@
                 <canvas id="id-canvas"></canvas>
             </div>
         </section>
+
+        <!-- Right Sidebar (Layers & Document Settings) -->
+        <aside class="sidebar sidebar-right">
+            
+            <!-- Layer Ordering -->
+            <section class="card">
+                <h2><i class="fa-solid fa-layer-group"></i> Layer Order</h2>
+                <div class="action-grid">
+                    <button id="bring-forward-btn" class="btn-tool"><i class="fa-solid fa-arrow-up"></i> Bring Forward</button>
+                    <button id="send-backward-btn" class="btn-tool"><i class="fa-solid fa-arrow-down"></i> Send Backward</button>
+                </div>
+            </section>
+
+            <!-- Document Guidelines & Helpers -->
+            <section class="card">
+                <h2><i class="fa-solid fa-ruler-combined"></i> Guides</h2>
+                <div class="action-grid">
+                    <button id="toggle-margin-btn" class="btn-tool"><i class="fa-solid fa-border-top-left"></i> Toggle Margins</button>
+                </div>
+            </section>
+
+            <!-- Quick Tips -->
+            <section class="card help-card">
+                <h2><i class="fa-solid fa-lightbulb"></i> Huduma Quick Tip</h2>
+                <p>You can drag images directly anywhere onto the page from your computer files!</p>
+            </section>
+
+        </aside>
 
     </main>
 

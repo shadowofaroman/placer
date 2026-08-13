@@ -210,6 +210,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- TOOL ACTIONS ---
 
+    // --- LAYER ORDERING & MARGIN TOGGLE ---
+    let marginGuideObj = null;
+
+    // Bring Forward
+    document.getElementById('bring-forward-btn').addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) {
+            canvas.bringForward(activeObj);
+            canvas.renderAll();
+        }
+    });
+
+    // Send Backward
+    document.getElementById('send-backward-btn').addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) {
+            canvas.sendBackwards(activeObj);
+            canvas.renderAll();
+        }
+    });
+
+    // Toggle Margins
+    document.getElementById('toggle-margin-btn').addEventListener('click', () => {
+        const objects = canvas.getObjects();
+        const marginGuide = objects.find(obj => obj.type === 'rect' && !obj.selectable);
+        if (marginGuide) {
+            marginGuide.set('visible', !marginGuide.visible);
+            canvas.renderAll();
+        }
+    });
+
     // Rotate Selected Object by 90 degrees
     document.getElementById('rotate-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
