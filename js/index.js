@@ -56,10 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function (event) {
             fabric.Image.fromURL(event.target.result, (img) => {
                 
-                // Scale image precisely to standard ID dimensions without double-scaling
+                // Scale proportionally based on width to preserve original aspect ratio
+                const scale = ID_WIDTH_PX / img.width;
                 img.set({
-                    scaleX: ID_WIDTH_PX / img.width,
-                    scaleY: ID_HEIGHT_PX / img.height
+                    scaleX: scale,
+                    scaleY: scale
                 });
                 img.setCoords();
 
@@ -195,10 +196,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 top: top,
                 angle: angle
             });
-            // Apply clean scaling after cropping
+            // Scale proportionally after cropping to preserve aspect ratio
+            const croppedScale = ID_WIDTH_PX / activeObj.width;
             activeObj.set({
-                scaleX: ID_WIDTH_PX / activeObj.width,
-                scaleY: ID_HEIGHT_PX / activeObj.height
+                scaleX: croppedScale,
+                scaleY: croppedScale
             });
             activeObj.setCoords();
             canvas.renderAll();
@@ -251,6 +253,16 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
             drawPageMarginGuides();
         }
+    });
+
+    // --- DIRECT PRINT MODE ---
+    document.getElementById('print-btn').addEventListener('click', () => {
+        // Deselect active image so selection boxes don't appear in print
+        canvas.discardActiveObject();
+        canvas.renderAll();
+
+        // Trigger native browser print dialog
+        window.print();
     });
 
     // --- PDF EXPORT FUNCTIONALITY ---
