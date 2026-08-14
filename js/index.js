@@ -380,4 +380,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.readAsDataURL(file);
             });
         });
+
+        // --- PASTE IMAGE FROM CLIPBOARD (CTRL+V) ---
+    window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+
+        for (let item of items) {
+            if (item.type.indexOf('image') !== -1) {
+                e.preventDefault(); // Stop default paste behavior
+
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+
+                reader.onload = (event) => {
+                    fabric.Image.fromURL(event.target.result, (img) => {
+                        // Apply proportional scaling based on standard width
+                        const scale = ID_WIDTH_PX / img.width;
+                        
+                        img.set({
+                            scaleX: scale,
+                            scaleY: scale,
+                            cornerColor: '#0D9488',
+                            cornerStyle: 'circle',
+                            borderColor: '#0D9488',
+                            cornerSize: 10,
+                            transparentCorners: false,
+                            left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2,
+                            top: 150
+                        });
+                        
+                        img.setCoords();
+                        canvas.add(img);
+                        canvas.setActiveObject(img);
+                        canvas.renderAll();
+                    });
+                };
+
+                reader.readAsDataURL(blob);
+                break; // Process one pasted image at a time
+            }
+        }
+    });
 });
