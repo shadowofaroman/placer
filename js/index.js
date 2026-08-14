@@ -138,15 +138,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const cropModal = document.getElementById('crop-modal');
     const cropImgElement = document.getElementById('crop-image');
 
-    // Open Crop Modal
+    // Open Crop Modal using full high-res original source
     document.getElementById('crop-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (!activeObj || activeObj.type !== 'image') {
             return alert("Please click and select an ID image on the canvas to crop.");
         }
 
-        // Convert fabric image to Data URL for Cropper.js
-        const src = activeObj.toDataURL();
+        // Use raw original image source element to retain 100% full quality
+        const src = activeObj._element ? activeObj._element.src : activeObj.toDataURL();
         cropImgElement.src = src;
 
         // Show modal
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cropper) cropper.destroy();
         cropper = new Cropper(cropImgElement, {
             viewMode: 1,
-            autoCropArea: 0.9,
+            autoCropArea: 0.95,
             responsive: true
         });
     });
@@ -180,9 +180,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeObj = canvas.getActiveObject();
         if (!activeObj) return;
 
-        // Get cropped image canvas from Cropper.js
-        const croppedCanvas = cropper.getCroppedCanvas();
-        const croppedDataUrl = croppedCanvas.toDataURL();
+        // Get maximum resolution cropped canvas with high-quality smoothing
+        const croppedCanvas = cropper.getCroppedCanvas({
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        // Export as lossless PNG
+        const croppedDataUrl = croppedCanvas.toDataURL('image/png', 1.0);
 
         // Store current dimensions & position
         const left = activeObj.left;
