@@ -1,25 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURATION & DPI CALCULATIONS ---
-    // Standard A4 dimensions at standard screen DPI (~96DPI representation)
-    const A4_WIDTH_PX = 794;  // equivalent to 210mm
-    const A4_HEIGHT_PX = 1123; // equivalent to 297mm
+    // A4 at 96 DPI screen representation
+    const A4_WIDTH_PX = 794;   // 210mm
+    const A4_HEIGHT_PX = 1123; // 297mm
 
-    // Kenyan / CR80 ID standard real physical size in millimeters
+    // CR80 / Kenyan ID physical size
     const ID_WIDTH_MM = 85.6;
     const ID_HEIGHT_MM = 53.98;
 
-    // Convert Millimeters to Canvas Pixels
     const MM_TO_PX = A4_WIDTH_PX / 210;
     const ID_WIDTH_PX = ID_WIDTH_MM * MM_TO_PX;   // ~323.7 px
     const ID_HEIGHT_PX = ID_HEIGHT_MM * MM_TO_PX; // ~204.1 px
 
-    // State Variables
+    // Output resolution: 300 DPI target. Canvas is 96 DPI, so 300 / 96 = 3.125
+    // -> 2481 x 3509 px for the full A4 sheet
+    const EXPORT_MULTIPLIER = 300 / 96;
+    const EXPORT_QUALITY = 0.95;
+
+    // State
     let frontImgObj = null;
     let backImgObj = null;
     let cropper = null;
+    let marginGuideObj = null;
 
-    // --- INITIALIZE FABRIC.JS CANVAS ---
+    // --- FABRIC CANVAS ---
     const canvas = new fabric.Canvas('id-canvas', {
         width: A4_WIDTH_PX,
         height: A4_HEIGHT_PX,
@@ -27,9 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selection: true
     });
 
-    // Render page border visual helper inside canvas
     const drawPageMarginGuides = () => {
-        const margin = new fabric.Rect({
+        marginGuideObj = new fabric.Rect({
             left: 20,
             top: 20,
             width: A4_WIDTH_PX - 40,
@@ -41,65 +45,107 @@ document.addEventListener('DOMContentLoaded', () => {
             selectable: false,
             evented: false
         });
-        canvas.add(margin);
+        canvas.add(marginGuideObj);
     };
     drawPageMarginGuides();
 
-    // --- HELPER FUNCTION: Add & Auto-Resize Image ---
+    // --- HI-RES RENDER (shared by print and PDF) ---
+    // Hides the margin guide and selection handles, renders at 300 DPI,
+    // then restores the guide.
+    const renderHiRes = (format = 'jpeg') => {
+        canvas.discardActiveObject();
+
+        const wasVisible = marginGuideObj ? marginGuideObj.visible : false;
+        if (marginGuideObj) marginGuideObj.visible = false;
+        canvas.renderAll();
+
+        const url = canvas.toDataURL({
+            format,
+            quality: EXPORT_QUALITY,
+            multiplier: EXPORT_MULTIPLIER
+        });
+
+        if (marginGuideObj) marginGuideObj.visible = wasVisible;
+        canvas.renderAll();
+        return url;
+    };
+
+    // --- PRINT SHEET (hi-res image swapped in at print time) ---
+    // Created here so no HTML changes are needed.
+    const printSheet = document.createElement('img');
+    printSheet.id = 'print-sheet';
+    printSheet.alt = '';
+    document.body.appendChild(printSheet);
+
+    const printStyle = document.createElement('style');
+    printStyle.textContent = `
+        #print-sheet { display: none; }
+        @page { size: A4; margin: 0; }
+        @media print {
+            html, body { margin: 0; padding: 0; background: #fff; }
+            body > *:not(#print-sheet) { display: none !important; }
+            #print-sheet { display: block; width: 210mm; height: 297mm; }
+        }
+    `;
+    document.head.appendChild(printStyle);
+
+    // --- SHARED: STYLE + ADD IMAGE TO CANVAS ---
+    const styleImage = (img) => {
+        img.set({
+            cornerColor: '#0D9488',
+            cornerStyle: 'circle',
+            borderColor: '#0D9488',
+            cornerSize: 10,
+            transparentCorners: false
+        });
+    };
+
+    const addImageFromDataUrl = (dataUrl, { left, top, role = null } = {}) => {
+        fabric.Image.fromURL(dataUrl, (img) => {
+            // Scale proportionally by width to preserve aspect ratio
+            const scale = ID_WIDTH_PX / img.width;
+            img.set({ scaleX: scale, scaleY: scale, left, top });
+            styleImage(img);
+            img.setCoords();
+
+            if (role === 'front') {
+                if (frontImgObj) canvas.remove(frontImgObj);
+                frontImgObj = img;
+            } else if (role === 'back') {
+                if (backImgObj) canvas.remove(backImgObj);
+                backImgObj = img;
+            }
+
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
+        });
+    };
+
+    // --- FILE INPUT UPLOAD ---
     const handleFileUpload = (e, isFront = true) => {
         const file = e.target.files[0];
         if (!file) return;
-
         e.target.value = '';
 
         const reader = new FileReader();
-        reader.onload = function (event) {
-            fabric.Image.fromURL(event.target.result, (img) => {
-                
-                // Scale proportionally based on width to preserve original aspect ratio
-                const scale = ID_WIDTH_PX / img.width;
-                img.set({
-                    scaleX: scale,
-                    scaleY: scale
-                });
-                img.setCoords();
-
-                // Add custom corner styles for sleek UI
-                img.set({
-                    cornerColor: '#0D9488',
-                    cornerStyle: 'circle',
-                    borderColor: '#0D9488',
-                    cornerSize: 10,
-                    transparentCorners: false
-                });
-
-                if (isFront) {
-                    if (frontImgObj) canvas.remove(frontImgObj);
-                    frontImgObj = img;
-                    // Position Front ID near top
-                    frontImgObj.set({ left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2, top: 100 });
-                } else {
-                    if (backImgObj) canvas.remove(backImgObj);
-                    backImgObj = img;
-                    // Position Back ID directly below Front ID
-                    backImgObj.set({ left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2, top: 100 + ID_HEIGHT_PX + 30 });
-                }
-
-                canvas.add(img);
-                canvas.setActiveObject(img);
-                canvas.renderAll();
+        reader.onload = (event) => {
+            const left = (A4_WIDTH_PX - ID_WIDTH_PX) / 2;
+            addImageFromDataUrl(event.target.result, {
+                left,
+                top: isFront ? 100 : 100 + ID_HEIGHT_PX + 30,
+                role: isFront ? 'front' : 'back'
             });
         };
         reader.readAsDataURL(file);
     };
 
-    // Event Listeners for File Inputs
     document.getElementById('front-id-input').addEventListener('change', (e) => handleFileUpload(e, true));
     document.getElementById('back-id-input').addEventListener('change', (e) => handleFileUpload(e, false));
 
-    // --- QUICK PRESETS LOGIC ---
-    
-    // Preset 1: Standard Vertically Stacked (Top & Bottom)
+    // --- QUICK PRESETS ---
+
+    // Stacked (top and bottom)
     document.getElementById('preset-stacked').addEventListener('click', () => {
         const activeObjs = canvas.getObjects().filter(obj => obj.type === 'image');
         if (activeObjs.length === 0) return alert("Please upload at least one ID image first.");
@@ -114,11 +160,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 angle: 0
             });
             img.scaleToWidth(ID_WIDTH_PX);
+            img.setCoords();
         });
         canvas.renderAll();
     });
 
-    // Preset 2: Side by Side
+    // Side by side
     document.getElementById('preset-side').addEventListener('click', () => {
         const activeObjs = canvas.getObjects().filter(obj => obj.type === 'image');
         if (activeObjs.length < 2) return alert("Please upload both Front and Back ID images.");
@@ -130,29 +177,29 @@ document.addEventListener('DOMContentLoaded', () => {
         activeObjs[0].set({ left: startX, top: 150, angle: 0 });
         activeObjs[1].set({ left: startX + ID_WIDTH_PX + gap, top: 150, angle: 0 });
 
-        activeObjs.forEach(img => img.scaleToWidth(ID_WIDTH_PX));
+        activeObjs.forEach(img => {
+            img.scaleToWidth(ID_WIDTH_PX);
+            img.setCoords();
+        });
         canvas.renderAll();
     });
 
-    // --- CROP MODE LOGIC ---
+    // --- CROP MODE ---
     const cropModal = document.getElementById('crop-modal');
     const cropImgElement = document.getElementById('crop-image');
 
-    // Open Crop Modal using full high-res original source
     document.getElementById('crop-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (!activeObj || activeObj.type !== 'image') {
             return alert("Please click and select an ID image on the canvas to crop.");
         }
 
-        // Use raw original image source element to retain 100% full quality
+        // Original full-res source, not the scaled canvas render
         const src = activeObj._element ? activeObj._element.src : activeObj.toDataURL();
         cropImgElement.src = src;
 
-        // Show modal
         cropModal.classList.add('active');
 
-        // Initialize Cropper.js
         if (cropper) cropper.destroy();
         cropper = new Cropper(cropImgElement, {
             viewMode: 1,
@@ -161,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Close Modal Helper
     const closeCropModal = () => {
         cropModal.classList.remove('active');
         if (cropper) {
@@ -173,36 +219,27 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-modal-btn').addEventListener('click', closeCropModal);
     document.getElementById('cancel-crop-btn').addEventListener('click', closeCropModal);
 
-    // Apply Crop Back to Fabric Canvas
     document.getElementById('apply-crop-btn').addEventListener('click', () => {
         if (!cropper) return;
 
         const activeObj = canvas.getActiveObject();
         if (!activeObj) return;
 
-        // Get maximum resolution cropped canvas with high-quality smoothing
+        // Full-resolution crop, lossless PNG
         const croppedCanvas = cropper.getCroppedCanvas({
             imageSmoothingEnabled: true,
             imageSmoothingQuality: 'high'
         });
-        // Export as lossless PNG
-        const croppedDataUrl = croppedCanvas.toDataURL('image/png', 1.0);
+        const croppedDataUrl = croppedCanvas.toDataURL('image/png');
 
-        // Store current dimensions & position
-        const left = activeObj.left;
-        const top = activeObj.top;
-        const angle = activeObj.angle;
+        const { left, top, angle } = activeObj;
 
-        // Update source of the Fabric Image
         activeObj.setSrc(croppedDataUrl, () => {
-            activeObj.set({
-                left: left,
-                top: top,
-                angle: angle
-            });
-            // Scale proportionally after cropping to preserve aspect ratio
             const croppedScale = ID_WIDTH_PX / activeObj.width;
             activeObj.set({
+                left,
+                top,
+                angle,
                 scaleX: croppedScale,
                 scaleY: croppedScale
             });
@@ -212,12 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- TOOL ACTIONS ---
-
     // --- LAYER ORDERING & MARGIN TOGGLE ---
-    let marginGuideObj = null;
-
-    // Bring Forward
     document.getElementById('bring-forward-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (activeObj) {
@@ -226,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Send Backward
     document.getElementById('send-backward-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (activeObj) {
@@ -235,35 +266,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Toggle Margins
     document.getElementById('toggle-margin-btn').addEventListener('click', () => {
-        const objects = canvas.getObjects();
-        const marginGuide = objects.find(obj => obj.type === 'rect' && !obj.selectable);
-        if (marginGuide) {
-            marginGuide.set('visible', !marginGuide.visible);
+        if (marginGuideObj) {
+            marginGuideObj.set('visible', !marginGuideObj.visible);
             canvas.renderAll();
         }
     });
 
-    // Rotate Selected Object by 90 degrees
+    // --- TOOL ACTIONS ---
     document.getElementById('rotate-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (activeObj) {
             activeObj.rotate((activeObj.angle + 90) % 360);
+            activeObj.setCoords();
             canvas.renderAll();
         }
     });
 
-    // Center Horizontally
     document.getElementById('center-h-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (activeObj) {
             activeObj.centerH();
+            activeObj.setCoords();
             canvas.renderAll();
         }
     });
 
-    // Delete Selected Image
     document.getElementById('delete-btn').addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (activeObj) {
@@ -274,14 +302,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Reset Canvas
     document.getElementById('reset-btn').addEventListener('click', () => {
         if (confirm("Are you sure you want to clear the sheet?")) {
             canvas.clear();
             frontImgObj = null;
             backImgObj = null;
 
-            // Clear file input values
             document.getElementById('front-id-input').value = '';
             document.getElementById('back-id-input').value = '';
 
@@ -290,138 +316,91 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- DIRECT PRINT MODE ---
+    // --- DIRECT PRINT (300 DPI) ---
     document.getElementById('print-btn').addEventListener('click', () => {
-        // Deselect active image so selection boxes don't appear in print
-        canvas.discardActiveObject();
-        canvas.renderAll();
-
-        // Trigger native browser print dialog
-        window.print();
+        printSheet.onload = () => {
+            printSheet.onload = null;
+            window.print();
+        };
+        printSheet.src = renderHiRes('jpeg');
     });
 
-    // --- PDF EXPORT FUNCTIONALITY ---
+    // Free the large image once the print dialog closes
+    window.addEventListener('afterprint', () => {
+        printSheet.removeAttribute('src');
+    });
+
+    // --- PDF EXPORT (300 DPI) ---
     document.getElementById('export-pdf-btn').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
-
-        // Create A4 PDF instance in Portrait (mm units)
         const pdf = new jsPDF('p', 'mm', 'a4');
 
-        // Deselect objects to remove transformation bounding box controls before capture
-        canvas.discardActiveObject();
-        canvas.renderAll();
-
-        // Convert Fabric Canvas to High-Res Data URL
-        const dataURL = canvas.toDataURL({
-            format: 'jpeg',
-            quality: 1.0,
-            multiplier: 2 // Boost resolution 2x for sharp printing
-        });
-
-        // Add Image to PDF fitting exactly to A4 proportions (210mm x 297mm)
-        pdf.addImage(dataURL, 'JPEG', 0, 0, 210, 297);
-        
-        // Save PDF with clear naming
+        pdf.addImage(renderHiRes('jpeg'), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
         pdf.save(`Huduma_ID_Print_${new Date().toISOString().slice(0, 10)}.pdf`);
     });
 
-    // --- DRAG AND DROP OVERLAY LOGIC ---
-        const dragOverlay = document.getElementById('drag-drop-overlay');
-        let dragCounter = 0; // Fixes flickering when hovering over child elements
+    // --- DRAG AND DROP OVERLAY ---
+    const dragOverlay = document.getElementById('drag-drop-overlay');
+    let dragCounter = 0; // prevents flicker over child elements
 
-        window.addEventListener('dragenter', (e) => {
-            e.preventDefault();
-            dragCounter++;
-            if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
-                dragOverlay.classList.add('active');
-            }
-        });
+    window.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+            dragOverlay.classList.add('active');
+        }
+    });
 
-        window.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dragCounter--;
-            if (dragCounter <= 0) {
-                dragCounter = 0;
-                dragOverlay.classList.remove('active');
-            }
-        });
-
-        window.addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
-
-        window.addEventListener('drop', (e) => {
-            e.preventDefault();
+    window.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter <= 0) {
             dragCounter = 0;
             dragOverlay.classList.remove('active');
+        }
+    });
 
-            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-            if (files.length === 0) return;
+    window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
 
-            files.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    fabric.Image.fromURL(event.target.result, (img) => {
-                        // Proportional scale to standard width
-                        const scale = ID_WIDTH_PX / img.width;
-                        img.set({
-                            scaleX: scale,
-                            scaleY: scale,
-                            cornerColor: '#0D9488',
-                            cornerStyle: 'circle',
-                            borderColor: '#0D9488',
-                            cornerSize: 10,
-                            transparentCorners: false,
-                            left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2 + (index * 25),
-                            top: 120 + (index * (ID_HEIGHT_PX + 30))
-                        });
-                        img.setCoords();
-                        canvas.add(img);
-                        canvas.setActiveObject(img);
-                        canvas.renderAll();
-                    });
-                };
-                reader.readAsDataURL(file);
-            });
+    window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragCounter = 0;
+        dragOverlay.classList.remove('active');
+
+        const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+        if (files.length === 0) return;
+
+        files.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                addImageFromDataUrl(event.target.result, {
+                    left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2 + (index * 25),
+                    top: 120 + (index * (ID_HEIGHT_PX + 30))
+                });
+            };
+            reader.readAsDataURL(file);
         });
+    });
 
-        // --- PASTE IMAGE FROM CLIPBOARD (CTRL+V) ---
+    // --- PASTE IMAGE FROM CLIPBOARD (CTRL+V) ---
     window.addEventListener('paste', (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
 
-        for (let item of items) {
+        for (const item of items) {
             if (item.type.indexOf('image') !== -1) {
-                e.preventDefault(); // Stop default paste behavior
+                e.preventDefault();
 
-                const blob = item.getAsFile();
                 const reader = new FileReader();
-
                 reader.onload = (event) => {
-                    fabric.Image.fromURL(event.target.result, (img) => {
-                        // Apply proportional scaling based on standard width
-                        const scale = ID_WIDTH_PX / img.width;
-                        
-                        img.set({
-                            scaleX: scale,
-                            scaleY: scale,
-                            cornerColor: '#0D9488',
-                            cornerStyle: 'circle',
-                            borderColor: '#0D9488',
-                            cornerSize: 10,
-                            transparentCorners: false,
-                            left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2,
-                            top: 150
-                        });
-                        
-                        img.setCoords();
-                        canvas.add(img);
-                        canvas.setActiveObject(img);
-                        canvas.renderAll();
+                    addImageFromDataUrl(event.target.result, {
+                        left: (A4_WIDTH_PX - ID_WIDTH_PX) / 2,
+                        top: 150
                     });
                 };
-
-                reader.readAsDataURL(blob);
-                break; // Process one pasted image at a time
+                reader.readAsDataURL(item.getAsFile());
+                break; // one pasted image at a time
             }
         }
     });
